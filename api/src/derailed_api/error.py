@@ -5,7 +5,4 @@ class Error(Exception):
         self.status_code = status_code
 
     def to_json(self) -> dict[str, int | str]:
-        return {
-            "code": self.code,
-            "message": self.reason
-        }
+        return {"code": self.code, "message": self.reason}

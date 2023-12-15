@@ -1,9 +1,11 @@
 import base64
 import binascii
 from typing import Any
+
 from asyncpg.pool import PoolConnectionProxy
 from fastapi import Request
 from itsdangerous import TimestampSigner
+
 from ..error import Error
 
 
@@ -20,7 +22,7 @@ async def get_user_from_token(request: Request, session: PoolConnectionProxy):
     except (IndexError, binascii.Error, UnicodeDecodeError, ValueError):
         raise Error(1003, "Invalid token", 401)
 
-    user: dict[str, Any] = dict(await session.fetchrow("SELECT * FROM users WHERE id = $1", user_id)) # type: ignore
+    user: dict[str, Any] = dict(await session.fetchrow("SELECT * FROM users WHERE id = $1", user_id))  # type: ignore
 
     if user is None:
         raise Error(1004, "Token is no longer valid", 401)

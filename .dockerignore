@@ -1,0 +1,6 @@
+target/
+node_modules/
+.vscode/
+.venv/
+.pdm-build/
+__pycache__/

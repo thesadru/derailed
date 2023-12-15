@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Literal, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class _Missing(Enum):

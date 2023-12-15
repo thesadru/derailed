@@ -1,0 +1,3 @@
+[workspace]
+members = ["gateway/apps/tokenrs/native/tokenrs"]
+resolver = "2"
