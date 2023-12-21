@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal, TypedDict
 
 import argon2
 import asyncpg.exceptions
@@ -17,8 +17,8 @@ pwhasher = argon2.PasswordHasher()
 
 
 class Register(pydantic.BaseModel):
-    email: Annotated[str, pydantic.Field(min_length=5, max_length=128)]
-    username: Annotated[str, pydantic.Field(min_length=3, max_length=32)]
+    email: pydantic.EmailStr
+    username: Annotated[str, pydantic.Field(min_length=3, max_length=32, pattern=r"^[a-z0-9]+(?:[._][a-z0-9]+)*$")]
     password: Annotated[str, pydantic.Field(min_length=8, max_length=128)]
 
 
@@ -30,8 +30,8 @@ async def register(model: Register):
                 user_rec = await session.fetchrow(
                     "INSERT INTO users (id, email, username, password VALUES) VALUES ($1, $2, $3, $4) RETURNING *;",
                     meta.create_snowflake(),
-                    model.email,
-                    model.username,
+                    model.email.lower(),
+                    model.username.lower(),
                     pwhasher.hash(model.password),
                 )
             except asyncpg.exceptions.UniqueViolationError:
@@ -59,7 +59,7 @@ class Login(pydantic.BaseModel):
 async def login(model: Login):
     async with db.acquire() as session:
         user = await session.fetchrow(
-            "SELECT * FROM users WHERE email = $1;", model.email
+            "SELECT * FROM users WHERE email = $1;", model.email.lower()
         )
 
         if user is None:
@@ -99,22 +99,22 @@ async def modify_user(request: Request, model: PatchUser):
         async with session.transaction():
             if model.email:
                 if model.email != user["email"]:
-                    user["email"] = model.email
+                    user["email"] = model.email.lower()
                     try:
                         await session.execute(
                             "UPDATE users SET email = $1 WHERE id = $2;",
-                            model.email,
+                            model.email.lower(),
                             user["id"],
                         )
                     except asyncpg.UniqueViolationError:
                         raise Error(1000, "email must be unique")
             if model.username:
                 if model.username != user["username"]:
-                    user["username"] = model.username
+                    user["username"] = model.username.lower()
                     try:
                         await session.execute(
                             "UPDATE users SET username = $1 WHERE id = $2",
-                            model.username,
+                            model.username.lower(),
                             user["id"],
                         )
                     except asyncpg.UniqueViolationError:
@@ -129,3 +129,44 @@ async def modify_user(request: Request, model: PatchUser):
         await meta.publish_user("USER_UPDATE", user["id"], user)
 
         return user
+
+
+## NOTE: user relationships
+
+
+class Relationship(TypedDict):
+    origin_user_id: int
+    target_user_id: int
+    # NOTE: VALUES:
+    # 0: friend
+    # 1: blocked
+    # 2: incoming
+    # 3: outgoing
+    relation: int
+
+
+class RelationshipType(pydantic.BaseModel):
+    type: Literal[1, 3, None]
+
+
+@router.put("/users/by-username/{username}/relationship")
+async def put_relationship(request: Request, username: str, model: RelationshipType):
+    async with db.acquire() as session:
+        user = await get_user_from_token(request, session)
+        target = await session.fetchrow("SELECT * FROM users WHERE username = $1;", username.lower())
+        assert target is not None
+
+        target_user_relation = await session.fetchval("SELECT relation FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;", target['id'], user['id'])
+
+        if target_user_relation == 1 and model.type != None:
+            raise Error(1002, "User has blocked you")
+
+        await session.fetch("DELETE FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;", user["id"], target["id"])
+
+        if model.type == None:
+            return ""
+
+        relationship = await session.fetchrow("INSERT INTO relationships (origin_user_id, target_user_id, relation) VALUES ($1, $2, $3)", user["id"], target["id"], model.type)
+        assert relationship is not None
+
+        return dict(relationship)

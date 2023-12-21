@@ -1,3 +1,1 @@
-# derailed-gateway
-
-The Derailed Gateway.
+# gateway

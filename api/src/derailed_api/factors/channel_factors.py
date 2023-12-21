@@ -9,4 +9,4 @@ async def get_channel(channel_id: int, user_id: int, session: PoolConnectionProx
     if channel is None:
         raise Error(4004, "Channel does not exist", 404)
 
-    return channel
+    return dict(channel)

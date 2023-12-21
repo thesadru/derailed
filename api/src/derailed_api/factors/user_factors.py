@@ -32,4 +32,4 @@ async def get_user_from_token(request: Request, session: PoolConnectionProxy):
     if not signer.validate(auth):
         raise Error(1003, "Invalid Token", 401)
 
-    return user
+    return dict(user)
