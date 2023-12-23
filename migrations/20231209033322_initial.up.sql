@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(32) UNIQUE NOT NULL,
     display_name VARCHAR(32) DEFAULT NULL,
     password TEXT NOT NULL,
-    flags BIGINT NOT NULL DEFAULT 0
+    flags BIGINT NOT NULL DEFAULT 0,
+    invited_by BIGINT
 );
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id BIGINT PRIMARY KEY,
@@ -83,6 +84,13 @@ CREATE TABLE IF NOT EXISTS relationships (
         REFERENCES users (id)
         ON DELETE CASCADE,
     FOREIGN KEY (target_user_id)
+        REFERENCES users (id)
+        ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS invite_codes (
+    id TEXT PRIMARY KEY,
+    owner_id BIGINT NOT NULL,
+    FOREIGN KEY (owner_id)
         REFERENCES users (id)
         ON DELETE CASCADE
 );

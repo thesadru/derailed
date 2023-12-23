@@ -11,12 +11,9 @@ async def ws_handler(ws: websockets.WebSocketServerProtocol):
 
 
 async def main():
-    async with websockets.serve(
-        ws_handler,
-        "0.0.0.0:15000"
-    ):
+    async with websockets.serve(ws_handler, "0.0.0.0:15000"):
         await asyncio.Future()
 
 
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main(), debug=True)

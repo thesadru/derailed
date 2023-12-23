@@ -1,10 +1,9 @@
+from derailed_api.error import Error
 from fastapi import FastAPI, Request
 from fastapi.concurrency import asynccontextmanager
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-
-from derailed_api.error import Error
 
 from .meta import meta
 from .routers import messages, users

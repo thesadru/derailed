@@ -1,11 +1,12 @@
 import os
-import time
 import threading
+import time
 from typing import Any
 
 import asyncpg
-import msgspec
 import grpc.aio as grpc
+import msgspec
+import redis.asyncio as redis
 
 from .gateway import GatewayStub, Interchange
 
@@ -19,28 +20,27 @@ class Meta:
         self.db = await asyncpg.create_pool(os.getenv("PG_DSN"), record_class=Record)  # type: ignore
         self.curthread = threading.current_thread().ident
         self.pid = os.getpid()
-        self.grpc = GatewayStub(grpc.insecure_channel(os.environ["GATEWAY_GRPC_CHANNEL"]))
+        self.grpc = GatewayStub(
+            grpc.insecure_channel(os.environ["GATEWAY_GRPC_CHANNEL"])
+        )
+        self.redis = redis.from_url(os.getenv("REDIS_URI") or "error")
 
-    async def publish_guild(
-        self, type: str, guild_id: int, data: dict[str, Any]
+    async def publish_channel(
+        self, type: str, user_ids: list[int], data: dict[str, Any]
     ) -> None:
-        await self.grpc.dispatch_guild(
-            Interchange(
-                t=type,
-                id=guild_id,
-                d=msgspec.json.encode(data).decode()
-            )
+        await self.redis.publish(
+            "channels",
+            msgspec.json.encode(
+                {"type": "CHANNEL_EVENT", "t": type, "d": data, "to": user_ids}
+            ),
         )
 
-    async def publish_user(
-        self, type: str, user_id: int, data: dict[str, Any]
-    ) -> None:
-        await self.grpc.dispatch_user(
-            Interchange(
-                t=type,
-                id=user_id,
-                d=msgspec.json.encode(data).decode()
-            )
+    async def publish_user(self, type: str, user_id: int, data: dict[str, Any]) -> None:
+        await self.redis.publish(
+            "users",
+            msgspec.json.encode(
+                {"type": "USER_EVENT", "t": type, "d": data, "to": user_id}
+            ),
         )
 
     def create_snowflake(self) -> int:

@@ -2,10 +2,11 @@ import asyncio
 import base64
 import binascii
 from typing import Any
-from itsdangerous import TimestampSigner
+
 import msgspec
-from pydantic import BaseModel
 import websockets.server as websockets
+from itsdangerous import TimestampSigner
+from pydantic import BaseModel
 
 from api.src.derailed_api import meta
 
@@ -71,12 +72,16 @@ class Session:
                 break
 
             if "op" not in data:
-                await self.stop(self.PAYLOAD_INVALID, "Payload is invalid (Op Code not present)")
+                await self.stop(
+                    self.PAYLOAD_INVALID, "Payload is invalid (Op Code not present)"
+                )
                 break
 
             if data["op"] == self.IDENTIFY:
                 if self.identified:
-                    await self.stop(self.ALREADY_AUTHORIZED, "Connection is already authorized")
+                    await self.stop(
+                        self.ALREADY_AUTHORIZED, "Connection is already authorized"
+                    )
                     break
 
                 identify = Identify.model_validate(data)
@@ -86,7 +91,9 @@ class Session:
                 user = await authorize(token)
 
                 if user is None:
-                    await self.stop(self.INVALID_AUTHORIZATION, "Authorization is invalid")
+                    await self.stop(
+                        self.INVALID_AUTHORIZATION, "Authorization is invalid"
+                    )
                     break
 
                 self.user_id = user["id"]
@@ -96,28 +103,33 @@ class Session:
                 async with meta.db.acquire() as session:
                     relationships_rec = await session.fetch(
                         "SELECT relation, target_user_id FROM relationships WHERE origin_user_id = $1;",
-                        user["id"]
+                        user["id"],
                     )
                     relationships = []
                     for r in relationships_rec:
                         relationships.append(dict(r))
 
-                    memberships = await session.fetch("SELECT channel_id FROM channel_members WHERE user_id = $1;", user["id"])
+                    memberships = await session.fetch(
+                        "SELECT channel_id FROM channel_members WHERE user_id = $1;",
+                        user["id"],
+                    )
 
                     channels = []
 
                     for m in memberships:
-                        channels.append(dict(await session.fetchrow("SELECT * FROM channels WHERE id = $1;", m["channel_id"]))) # type: ignore
+                        channels.append(dict(await session.fetchrow("SELECT * FROM channels WHERE id = $1;", m["channel_id"])))  # type: ignore
 
-                await self.send({
-                    'op': 0,
-                    't': "READY",
-                    'd': {
-                        "user": user,
-                        "relationships": relationships,
-                        "channels": channels
+                await self.send(
+                    {
+                        "op": 0,
+                        "t": "READY",
+                        "d": {
+                            "user": user,
+                            "relationships": relationships,
+                            "channels": channels,
+                        },
                     }
-                })
+                )
             else:
                 await self.stop(self.PAYLOAD_INVALID, "Invalid Op Code provided")
                 break

@@ -1,14 +1,13 @@
 import asyncio
 import os
-import time
 import threading
-from typing import Any, Literal, cast
+import time
 import typing
+from typing import Any, Literal, cast
 
 import asyncpg
 import msgspec
 import redis.asyncio as redis
-
 
 if typing.TYPE_CHECKING:
     from .session import Session
@@ -46,7 +45,7 @@ class Meta:
     async def recv(self) -> None:
         await self.pubsub.subscribe("channels", "users")
         while True:
-            msg = await self.pubsub.get_message(timeout=None) # type: ignore
+            msg = await self.pubsub.get_message(timeout=None)  # type: ignore
 
             data: dict[str, Any] = msgspec.json.decode(msg)
             receivers = cast(list[int], data.pop("to"))

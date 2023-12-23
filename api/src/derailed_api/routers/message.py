@@ -2,11 +2,11 @@ import datetime
 from typing import Annotated
 
 import pydantic
-from api.src.derailed_api import meta
 from fastapi import APIRouter, Request
 
-from ..factors.channel_factors import get_channel
+from api.src.derailed_api import meta
 
+from ..factors.channel_factors import get_channel
 from ..factors.user_factors import get_user_from_token
 
 router = APIRouter()
@@ -23,8 +23,7 @@ async def create_message(request: Request, channel_id: int, model: CreateMessage
         user = await get_user_from_token(request, session)
         channel = await get_channel(channel_id, user["id"], session)
         channel_members = await session.fetch(
-            "SELECT user_id FROM channel_members WHERE channel_id = $1;",
-            channel["id"]
+            "SELECT user_id FROM channel_members WHERE channel_id = $1;", channel["id"]
         )
 
         message = await session.fetchrow(
@@ -33,21 +32,27 @@ async def create_message(request: Request, channel_id: int, model: CreateMessage
             channel["id"],
             user["id"],
             model.content,
-            datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+            datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
         )
 
         assert message is not None
 
         msg = dict(message)
 
+        user_ids = []
+
         for member in channel_members:
-            await meta.publish_user("MESSAGE_CREATE", member["user_id"], msg)
+            user_ids.append(member["user_id"])
+
+        await meta.publish_channel("MESSAGE_CREATE", user_ids, msg)
 
         return msg
 
 
 @router.get("/channels/{channel_id}/messages")
-async def get_channel_messages(request: Request, channel_id: int, after: int = 0, before: int = 0):
+async def get_channel_messages(
+    request: Request, channel_id: int, after: int = 0, before: int = 0
+):
     async with db.acquire() as session:
         user = await get_user_from_token(request, session)
         await get_channel(channel_id, user["id"], session)
@@ -57,7 +62,7 @@ async def get_channel_messages(request: Request, channel_id: int, after: int = 0
                 f"SELECT * FROM messages WHERE channel_id = $1 AND id > $2 AND id < $3 ORDER BY id DESC LIMIT 32;",
                 channel_id,
                 after,
-                before
+                before,
             )
         else:
             messages = await session.fetchrow(

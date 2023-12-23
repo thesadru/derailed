@@ -1,4 +1,5 @@
 from typing import Annotated, Literal, TypedDict
+from uuid import uuid4
 
 import argon2
 import asyncpg.exceptions
@@ -18,30 +19,59 @@ pwhasher = argon2.PasswordHasher()
 
 class Register(pydantic.BaseModel):
     email: pydantic.EmailStr
-    username: Annotated[str, pydantic.Field(min_length=3, max_length=32, pattern=r"^[a-z0-9]+(?:[._][a-z0-9]+)*$")]
+    username: Annotated[
+        str,
+        pydantic.Field(
+            min_length=3, max_length=32, pattern=r"^[a-z0-9]+(?:[._][a-z0-9]+)*$"
+        ),
+    ]
     password: Annotated[str, pydantic.Field(min_length=8, max_length=128)]
+    invite_code: str
 
 
 @router.post("/register")
 async def register(model: Register):
     async with db.acquire() as session:
+        owner_id = await session.fetchval(
+            "SELECT owner_id FROM invite_codes WHERE id = $1;", model.invite_code
+        )
+
+        if owner_id is None:
+            raise Error(1007, "Invite code does not exist or is expired or used")
+
         async with session.transaction():
             try:
                 user_rec = await session.fetchrow(
-                    "INSERT INTO users (id, email, username, password VALUES) VALUES ($1, $2, $3, $4) RETURNING *;",
+                    "INSERT INTO users (id, email, username, password, invited_by) VALUES ($1, $2, $3, $4, $5) RETURNING *;",
                     meta.create_snowflake(),
                     model.email.lower(),
                     model.username.lower(),
                     pwhasher.hash(model.password),
+                    owner_id,
                 )
             except asyncpg.exceptions.UniqueViolationError:
                 raise Error(1000, "username or email must be unique")
 
             assert user_rec is not None
 
-            await session.fetchrow("INSERT INTO user_settings (user_id) VALUES ($1);", user_rec["id"])
+            await session.fetch(
+                "INSERT INTO user_settings (user_id) VALUES ($1);", user_rec["id"]
+            )
+            await session.fetch(
+                "DELETE FROM invite_codes WHERE id = $1;", model.invite_code
+            )
 
             user = dict(user_rec)
+            user["invite_codes"] = []
+
+            for _ in range(5):
+                invite_code = str(uuid4())
+                await session.fetch(
+                    "INSERT INTO invite_codes (id, owner_id) VALUES ($1, $2);",
+                    invite_code,
+                    user["id"],
+                )
+                user["invite_codes"].append(invite_code)
 
             signer = itsdangerous.TimestampSigner(user.pop("password"))
 
@@ -125,7 +155,7 @@ async def modify_user(request: Request, model: PatchUser):
                     pwhasher.hash(model.password),
                     user["id"],
                 )
-        
+
         await meta.publish_user("USER_UPDATE", user["id"], user)
 
         return user
@@ -146,27 +176,64 @@ class Relationship(TypedDict):
 
 
 class RelationshipType(pydantic.BaseModel):
-    type: Literal[1, 3, None]
+    type: Literal[0, 1, 2, None]
 
 
 @router.put("/users/by-username/{username}/relationship")
 async def put_relationship(request: Request, username: str, model: RelationshipType):
     async with db.acquire() as session:
         user = await get_user_from_token(request, session)
-        target = await session.fetchrow("SELECT * FROM users WHERE username = $1;", username.lower())
+        target = await session.fetchrow(
+            "SELECT * FROM users WHERE username = $1;", username.lower()
+        )
         assert target is not None
 
-        target_user_relation = await session.fetchval("SELECT relation FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;", target['id'], user['id'])
+        target_user_relation: int = await session.fetchval(
+            "SELECT relation FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;",
+            target["id"],
+            user["id"],
+        )
 
         if target_user_relation == 1 and model.type != None:
             raise Error(1002, "User has blocked you")
 
-        await session.fetch("DELETE FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;", user["id"], target["id"])
+        if model.type == 1 and target_user_relation != 3:
+            raise Error(1008, "Cannot accept friend request which does not exist")
+
+        await session.fetch(
+            "DELETE FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;",
+            user["id"],
+            target["id"],
+        )
+        await session.fetch(
+            "DELETE FROM relationships WHERE origin_user_id = $1 AND target_user_id = $2;",
+            target["id"],
+            user["id"],
+        )
 
         if model.type == None:
             return ""
 
-        relationship = await session.fetchrow("INSERT INTO relationships (origin_user_id, target_user_id, relation) VALUES ($1, $2, $3)", user["id"], target["id"], model.type)
+        relationship = await session.fetchrow(
+            "INSERT INTO relationships (origin_user_id, target_user_id, relation) VALUES ($1, $2, $3)",
+            user["id"],
+            target["id"],
+            model.type,
+        )
+
+        new_foreign_type = 1
+
+        if model.type == 2:
+            new_foreign_type = 3
+
+        if model.type == 2 or model.type == 1:
+            await session.fetch(
+                "INSERT INTO relationships (origin_user_id, target_user_id, relation) VALUES ($1, $2, $3);",
+                target["id"],
+                user["id"],
+                new_foreign_type,
+            )
+
         assert relationship is not None
 
         return dict(relationship)

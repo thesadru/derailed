@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router'
 
 const Register = React.lazy(() => import('./routes/Register'))
+const Login = React.lazy(() => import('./routes/Login'))
 
 const rootRoute = new RootRoute({
     component: () => (
@@ -25,7 +26,13 @@ const registerRoute = new Route({
     component: () => <Suspense><Register /></Suspense>
 })
 
-const routeTree = rootRoute.addChildren([registerRoute])
+const loginRoute = new Route({
+    getParentRoute: () => rootRoute,
+    path: "/login",
+    component: () => <Suspense><Login /></Suspense>
+})
+
+const routeTree = rootRoute.addChildren([registerRoute, loginRoute])
 
 const router = new Router({ routeTree })
 

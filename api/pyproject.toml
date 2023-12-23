@@ -19,6 +19,9 @@ requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "UNLICENSED"}
 
+[tool.pdm.scripts]
+dev = "uvicorn derailed_api:app"
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

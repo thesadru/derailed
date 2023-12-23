@@ -1,6 +1,8 @@
 # Derailed
 
-Official source code repository for the Derailed project.
+Welcome! This is Derailed, a project aiming for a more versatile, easy-to-use, and customizable Discord and Slack like experience.
+
+At the moment, all you need to run Derailed is Node.js and Python.
 
 ## Deploying Derailed
 
@@ -23,5 +25,11 @@ After that, simply just run `pdm install` and run with gunicorn for production,
 or `pdm run dev` to run a development version. (Gunicorn only works on UNIX systems.)
 
 ### Gateway
+
+For now:
+
+Just do the same steps as with the API, but instead in the `gateway` directory.
+
+*In the future:*
 
 In able to deploy the Gateway Services, you need to firstly install Elixir `1.15`, alongside Erlang `26` (the newest version of `26` ideally.)
