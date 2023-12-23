@@ -48,7 +48,10 @@ class Meta:
             msg = await self.pubsub.get_message(timeout=None)  # type: ignore
 
             data: dict[str, Any] = msgspec.json.decode(msg)
-            receivers = cast(list[int], data.pop("to"))
+            receivers = cast(list[int] | int, data.pop("to"))
+
+            if not isinstance(receivers, list):
+                receivers = [receivers]
 
             for session in self.sessions:
                 if session.user_id in receivers:
