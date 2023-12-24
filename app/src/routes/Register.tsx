@@ -1,8 +1,8 @@
-import { FormEvent } from "react"
+import { FormEvent, useState } from "react"
 import JSON from "json-bigint"
 
 export default () => {
-    let errors: string[] = []
+    let [error, setError] = useState<string | null>(null)
     var currentlyInvoking = false
 
     async function onInvoke(event: FormEvent) {
@@ -34,10 +34,13 @@ export default () => {
             }
         )
 
+        const respData = await response.json()
+
         if (response.status !== 201) {
-            const respData = await response.json()
             console.error(respData)
-            errors.push(respData.message)
+            setError(respData.message)
+        } else {
+            localStorage.setItem("token", respData._token)
         }
 
         currentlyInvoking = false
@@ -72,15 +75,7 @@ export default () => {
                     Let's start
                 </button>
                 <ul className="text-red-600 font-bold">
-                    {errors.map(
-                        (v, idx, _arr) => {
-                            return (<li>
-                                <p key={idx}>
-                                    {v}
-                                </p>
-                            </li>)
-                        }
-                    )}
+                    {error && error}
                 </ul>
             </form>
         </div>
