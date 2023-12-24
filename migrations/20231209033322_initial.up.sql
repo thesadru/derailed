@@ -1,27 +1,24 @@
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL PRIMARY KEY,
     username VARCHAR(32) UNIQUE NOT NULL,
-    display_name VARCHAR(32) DEFAULT NULL,
+    display_name VARCHAR(32),
     password TEXT NOT NULL,
     flags BIGINT NOT NULL DEFAULT 0,
     invited_by BIGINT
 );
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id BIGINT PRIMARY KEY,
-    theme TEXT NOT NULL DEFAULT "dark",
-    status INT NOT NULL DEFAULT 1,
+    theme TEXT NOT NULL DEFAULT 'dark',
+    status INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (user_id)
         REFERENCES users (id)
         ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS channels (
     id BIGINT PRIMARY KEY,
-    type INT NOT NULL,
+    type INTEGER NOT NULL,
     name VARCHAR(32),
-    last_message_id BIGINT,
-    FOREIGN KEY (parent_id)
-        REFERENCES channels (id)
-        ON DELETE SET NULL
+    last_message_id BIGINT
 );
 CREATE TABLE IF NOT EXISTS channel_members (
     channel_id BIGINT NOT NULL,
@@ -78,7 +75,7 @@ CREATE TABLE IF NOT EXISTS message_reactions (
 CREATE TABLE IF NOT EXISTS relationships (
     origin_user_id BIGINT NOT NULL,
     target_user_id BIGINT NOT NULL,
-    relation INT NOT NULL,
+    relation INTEGER NOT NULL,
     PRIMARY KEY (origin_user_id, target_user_id),
     FOREIGN KEY (origin_user_id)
         REFERENCES users (id)

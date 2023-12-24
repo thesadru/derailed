@@ -32,6 +32,7 @@ class Meta:
         self.db: asyncpg.Pool[asyncpg.Record]
         self._incr = 0
         self._recv_task = None
+        self.should_receive_events = True
         self.sessions: list["Session"] = []
 
     async def start(self) -> None:
@@ -44,7 +45,7 @@ class Meta:
 
     async def recv(self) -> None:
         await self.pubsub.subscribe("channels", "users")
-        while True:
+        while self.should_receive_events:
             msg = await self.pubsub.get_message(timeout=None)  # type: ignore
 
             data: dict[str, Any] = msgspec.json.decode(msg)

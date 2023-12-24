@@ -17,12 +17,12 @@ class Meta:
         self._incr = 0
 
     async def start(self) -> None:
-        self.db = await asyncpg.create_pool(os.getenv("PG_DSN"), record_class=Record)  # type: ignore
+        self.db = await asyncpg.create_pool(os.environ["PG_DSN"], record_class=asyncpg.Record)  # type: ignore
         self.curthread = threading.current_thread().ident
         self.pid = os.getpid()
-        self.grpc = GatewayStub(
-            grpc.insecure_channel(os.environ["GATEWAY_GRPC_CHANNEL"])
-        )
+        # self.grpc = GatewayStub(
+        #    grpc.insecure_channel(os.environ["GATEWAY_GRPC_CHANNEL"])
+        # )
         self.redis = redis.from_url(os.getenv("REDIS_URI") or "error")
 
     async def publish_channel(

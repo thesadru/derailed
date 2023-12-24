@@ -14,13 +14,16 @@ dependencies = [
     "msgspec>=0.18.4",
     "uvicorn[standard]>=0.24.0.post1",
     "redis>=5.0.1",
+    "asyncpg>=0.29.0",
+    "pydantic[email]>=2.5.3",
+    "python-dotenv>=1.0.0",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "UNLICENSED"}
 
 [tool.pdm.scripts]
-dev = "uvicorn derailed_api:app"
+dev = "uvicorn derailed_api:app --port 14000 --reload"
 
 [build-system]
 requires = ["pdm-backend"]

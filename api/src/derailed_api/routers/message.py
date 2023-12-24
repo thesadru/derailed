@@ -4,13 +4,11 @@ from typing import Annotated
 import pydantic
 from fastapi import APIRouter, Request
 
-from api.src.derailed_api import meta
-
 from ..factors.channel_factors import get_channel
 from ..factors.user_factors import get_user_from_token
+from ..meta import meta
 
 router = APIRouter()
-db = meta.db
 
 
 class CreateMessage(pydantic.BaseModel):
@@ -19,7 +17,7 @@ class CreateMessage(pydantic.BaseModel):
 
 @router.post("/channels/{channel_id}/messages")
 async def create_message(request: Request, channel_id: int, model: CreateMessage):
-    async with db.acquire() as session:
+    async with meta.db.acquire() as session:
         user = await get_user_from_token(request, session)
         channel = await get_channel(channel_id, user["id"], session)
         channel_members = await session.fetch(
@@ -39,6 +37,12 @@ async def create_message(request: Request, channel_id: int, model: CreateMessage
 
         msg = dict(message)
 
+        await session.fetch(
+            "UPDATE channels SET last_message_id = $2 WHERE id = $1;",
+            channel["id"],
+            msg["id"],
+        )
+
         user_ids = []
 
         for member in channel_members:
@@ -53,7 +57,7 @@ async def create_message(request: Request, channel_id: int, model: CreateMessage
 async def get_channel_messages(
     request: Request, channel_id: int, after: int = 0, before: int = 0
 ):
-    async with db.acquire() as session:
+    async with meta.db.acquire() as session:
         user = await get_user_from_token(request, session)
         await get_channel(channel_id, user["id"], session)
 
