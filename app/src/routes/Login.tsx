@@ -1,15 +1,55 @@
-import { FormEvent } from "react"
+import { FormEvent, useState } from "react"
+import JSON from "json-bigint"
+import { useNavigate } from "@tanstack/react-router"
 
 export default () => {
-    let errors: string[] = []
+    const [error, setError] = useState<string | null>(null)
+    const navigate = useNavigate()
+    var currentlyInvoking = false
 
-    function onInvoke(event: FormEvent) {
+    async function onInvoke(event: FormEvent) {
         event.preventDefault()
+
+        if (currentlyInvoking) {
+            return
+        }
+
+        currentlyInvoking = true
+
+        // @ts-ignore
+        const data = new FormData(event.target)
+
+        const response = await fetch(
+            import.meta.env.VITE_API_URL + "/login",
+            {
+                mode: "cors",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: data.get("email"),
+                    password: data.get("password")
+                })
+            }
+        )
+
+        const respData = await response.json()
+
+        if (response.status !== 201) {
+            console.error(respData)
+            setError(respData.message)
+        } else {
+            localStorage.setItem("token", respData._token)
+            await navigate({to: "/"})
+        }
+
+        currentlyInvoking = false
     }
 
     return (
         <div className="flex bg-gradient-to-bl bg-[conic-gradient(at_right,_var(--tw-gradient-stops))] from-indigo-200 via-slate-600 to-indigo-200 min-h-screen text-white font-primary">
-            <form className="bg-gradient-to-bl from-gray-700 via-gray-900 to-black flex flex-col justify-center text-center gap-6 m-auto rounded-3xl p-20">
+            <form onSubmit={onInvoke} className="bg-gradient-to-bl from-gray-700 via-gray-900 to-black flex flex-col justify-center text-center gap-6 m-auto rounded-3xl p-20">
                 <section>
                     <h1 className="font-light text-3xl max-w-sm">
                         Welcome back to your platform.<br />Welcome back to Derailed.
@@ -29,17 +69,9 @@ export default () => {
                 <button type="submit" className="text-xl placeholder-gray-900 text-gray-900 bg-gradient-to-bl bg-[conic-gradient(at_right,_var(--tw-gradient-stops))] from-indigo-200 via-slate-600 to-indigo-200 rounded-2xl py-2 hover:scale-110 transition duration-700 ease-in-out">
                     Login
                 </button>
-                <ul className="text-red-600 font-bold">
-                    {errors.map(
-                        (v, idx, _arr) => {
-                            return (<li>
-                                <p key={idx}>
-                                    {v}
-                                </p>
-                            </li>)
-                        }
-                    )}
-                </ul>
+                <p className="text-red-600 font-bold">
+                    {error && error}
+                </p>
             </form>
         </div>
     )

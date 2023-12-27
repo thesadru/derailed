@@ -1,8 +1,10 @@
 import { FormEvent, useState } from "react"
 import JSON from "json-bigint"
+import { useNavigate } from "@tanstack/react-router"
 
 export default () => {
-    let [error, setError] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+    const navigate = useNavigate()
     var currentlyInvoking = false
 
     async function onInvoke(event: FormEvent) {
@@ -41,6 +43,7 @@ export default () => {
             setError(respData.message)
         } else {
             localStorage.setItem("token", respData._token)
+            await navigate({to: "/"})
         }
 
         currentlyInvoking = false
@@ -74,9 +77,9 @@ export default () => {
                 <button type="submit" className="text-xl placeholder-gray-900 text-gray-900 bg-gradient-to-bl bg-[conic-gradient(at_right,_var(--tw-gradient-stops))] from-indigo-200 via-slate-600 to-indigo-200 rounded-2xl py-2 hover:scale-110 transition duration-700 ease-in-out">
                     Let's start
                 </button>
-                <ul className="text-red-600 font-bold">
+                <p className="text-red-600 font-bold">
                     {error && error}
-                </ul>
+                </p>
             </form>
         </div>
     )
