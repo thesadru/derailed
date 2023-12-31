@@ -7,6 +7,7 @@ import msgspec
 import websockets.server as websockets
 from itsdangerous import TimestampSigner
 from pydantic import BaseModel
+from random import randint
 
 from api.src.derailed_api import meta
 
@@ -42,21 +43,33 @@ class Session:
     PAYLOAD_INVALID = 2000
     INVALID_AUTHORIZATION = 2001
     ALREADY_AUTHORIZED = 2002
+    HEARTBEAT_MISSED = 2003
+    HEARTBEAT_ALREADY_RECEIVED = 2004
 
     # Op Codes
     EVENT = 0
     HELLO = 1
     IDENTIFY = 2
+    HEARTBEAT = 3
+    ACK = 4
 
     def __init__(self, ws: websockets.WebSocketServerProtocol) -> None:
         self.ws = ws
         self.user = {}
         self.user_id: int = 0
         self.identified = False
+        self.hb_received = False
+        self.hb_interval = randint(43_000, 46_000)
+        # add an extra buffer in case of connection issues
+        self.actual_hb_interval = (self.hb_interval / 1000) + 1_000
+        self.sequence = 0
         self._recv_fut = None
+        self._hb_fut = None
         self._future = asyncio.Future()
 
     async def send(self, data: dict[str, Any]) -> None:
+        self.sequence += 1
+        data["s"] = self.sequence
         await self.ws.send(msgspec.json.encode(data))
 
     async def stop(self, code: int, reason: str) -> None:
@@ -130,10 +143,38 @@ class Session:
                         },
                     }
                 )
+            # NOTE: once we move to Elixir, force users to provide a sequence either 10 above or under the actual sequence (to avoid disconnection due to network issues)
+            elif data["op"] == self.HEARTBEAT:
+                if self.hb_received:
+                    await self.stop(self.HEARTBEAT_ALREADY_RECEIVED, "Heartbeat Already Received")
+                    break
+
+                self.hb_received = True
             else:
                 await self.stop(self.PAYLOAD_INVALID, "Invalid Op Code provided")
                 break
 
+    async def hb_wait(self) -> None:
+        await asyncio.sleep(self.actual_hb_interval)
+        if not self.hb_received:
+            await self.stop(self.HEARTBEAT_MISSED, "Heartbeat was missed")
+
+        await self.send({
+            "op": self.ACK,
+            "d": None
+        })
+
+        self._hb_fut = asyncio.create_task(self.hb_wait())
+
     async def run(self) -> None:
+        await self.send({
+            "op": self.HELLO,
+            "d": {
+                "heartbeat_interval": self.hb_interval
+            }
+        })
+        self._hb_fut = asyncio.create_task(self.hb_wait())
         self._recv_fut = asyncio.create_task(self._recv())
         await self._future
+        self._hb_fut.cancel()
+        self._recv_fut.cancel()
