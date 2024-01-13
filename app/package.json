@@ -12,13 +12,16 @@
   "dependencies": {
     "@tanstack/react-router": "0.0.1-beta.279",
     "@tanstack/router-devtools": "0.0.1-alpha.0",
-    "@types/json-bigint": "^1.0.4",
+    "derailed.js": "workspace:*",
     "json-bigint": "^1.0.0",
+    "mobx": "^6.12.0",
+    "mobx-react-lite": "^4.0.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "derailed.js": "workspace:*"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@iconify/react": "^4.1.1",
+    "@types/json-bigint": "^1.0.4",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
