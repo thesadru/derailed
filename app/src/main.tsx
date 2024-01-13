@@ -9,8 +9,10 @@ import {
   RootRoute,
 } from '@tanstack/react-router'
 
-const Register = React.lazy(() => import('./routes/Register'))
-const Login = React.lazy(() => import('./routes/Login'))
+const Register = React.lazy(() => import('./routes/registration/Register'))
+const Login = React.lazy(() => import('./routes/registration/Login'))
+const Home = React.lazy(() => import('./routes/Home'))
+const Channel = React.lazy(() => import('./routes/Channel'))
 
 const rootRoute = new RootRoute({
     component: () => (
@@ -22,17 +24,34 @@ const rootRoute = new RootRoute({
 
 const registerRoute = new Route({
     getParentRoute: () => rootRoute,
-    path: "/register",
+    path: "register",
     component: () => <Suspense><Register /></Suspense>
 })
 
 const loginRoute = new Route({
     getParentRoute: () => rootRoute,
-    path: "/login",
+    path: "login",
     component: () => <Suspense><Login /></Suspense>
 })
 
-const routeTree = rootRoute.addChildren([registerRoute, loginRoute])
+const channelsRoute = new Route({
+    getParentRoute: () => rootRoute,
+    path: "channels"
+})
+
+const homeRoute = new Route({
+    getParentRoute: () => channelsRoute,
+    path: "@me",
+    component: () => <Suspense><Home /></Suspense>
+})
+
+const channelRoute = new Route({
+    getParentRoute: () => channelsRoute,
+    path: "$channelId",
+    component: () => <Suspense><Channel /></Suspense>
+})
+
+const routeTree = rootRoute.addChildren([registerRoute, loginRoute, channelsRoute.addChildren([homeRoute, channelRoute])])
 
 const router = new Router({ routeTree })
 
