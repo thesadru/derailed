@@ -132,6 +132,10 @@ class Session:
                     for m in memberships:
                         channels.append(dict(await session.fetchrow("SELECT * FROM channels WHERE id = $1;", m["channel_id"])))  # type: ignore
 
+                    settings_row = await session.fetchrow("SELECT * FROM user_settings WHERE user_id = $1;", user["id"])
+
+                    assert settings_row
+
                 await self.send(
                     {
                         "op": 0,
@@ -140,6 +144,7 @@ class Session:
                             "user": user,
                             "relationships": relationships,
                             "channels": channels,
+                            "settings": dict(settings_row)
                         },
                     }
                 )
