@@ -8,11 +8,11 @@ export interface Event {
 }
 
 export class DerailedWebSocket {
-    public emitter: EventEmitter<string, Event>
-    public heartbeat_interval: number
-    public sequence: number
+    public emitter: EventEmitter<string, any>
+    public heartbeat_interval: number = 0
+    public sequence: number = 0
     private token: string
-    private ws: WebSocket | null
+    private ws: WebSocket | null = null
     private heartbeat_ref: number | null = null
     private connected: boolean = false
 
