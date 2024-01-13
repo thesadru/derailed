@@ -9,7 +9,7 @@ from itsdangerous import TimestampSigner
 from pydantic import BaseModel
 from random import randint
 
-from api.src.derailed_api import meta
+from .meta import meta
 
 
 async def authorize(auth: str) -> dict[str, Any] | None:
