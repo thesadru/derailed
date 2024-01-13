@@ -17,7 +17,6 @@ pwhasher = argon2.PasswordHasher()
 
 
 class Register(pydantic.BaseModel):
-    email: pydantic.EmailStr
     username: Annotated[
         str,
         pydantic.Field(
@@ -41,15 +40,14 @@ async def register(model: Register):
         async with session.transaction():
             try:
                 user_rec = await session.fetchrow(
-                    "INSERT INTO users (id, email, username, password, invited_by) VALUES ($1, $2, $3, $4, $5) RETURNING *;",
+                    "INSERT INTO users (id, username, password, invited_by) VALUES ($1, $2, $3, $4, $5) RETURNING *;",
                     meta.create_snowflake(),
-                    model.email.lower(),
                     model.username.lower(),
                     pwhasher.hash(model.password),
                     owner_id,
                 )
             except asyncpg.exceptions.UniqueViolationError:
-                raise Error(1000, "username or email must be unique")
+                raise Error(1000, "username must be unique")
 
             assert user_rec is not None
 
@@ -80,7 +78,7 @@ async def register(model: Register):
 
 
 class Login(pydantic.BaseModel):
-    email: Annotated[str, pydantic.Field(min_length=5, max_length=128)]
+    username: Annotated[str, pydantic.Field(min_length=3, max_length=32)]
     password: Annotated[str, pydantic.Field(min_length=8, max_length=128)]
 
 
@@ -88,11 +86,11 @@ class Login(pydantic.BaseModel):
 async def login(model: Login):
     async with meta.db.acquire() as session:
         user = await session.fetchrow(
-            "SELECT * FROM users WHERE email = $1;", model.email.lower()
+            "SELECT * FROM users WHERE username = $1;", model.username.lower()
         )
 
         if user is None:
-            raise Error(1005, "Invalid email")
+            raise Error(1005, "Invalid username")
 
         user = dict(user)
 
@@ -126,17 +124,6 @@ async def modify_user(request: Request, model: PatchUser):
         user = await get_user_from_token(request, session)
 
         async with session.transaction():
-            if model.email:
-                if model.email != user["email"]:
-                    user["email"] = model.email.lower()
-                    try:
-                        await session.execute(
-                            "UPDATE users SET email = $1 WHERE id = $2;",
-                            model.email.lower(),
-                            user["id"],
-                        )
-                    except asyncpg.UniqueViolationError:
-                        raise Error(1000, "email must be unique")
             if model.username:
                 if model.username != user["username"]:
                     user["username"] = model.username.lower()
