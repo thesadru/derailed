@@ -70,7 +70,7 @@ class Session:
     async def send(self, data: dict[str, Any]) -> None:
         self.sequence += 1
         data["s"] = self.sequence
-        await self.ws.send(msgspec.json.encode(data))
+        await self.ws.send(msgspec.json.encode(data).decode())
 
     async def stop(self, code: int, reason: str) -> None:
         await self.ws.close(code, reason)
