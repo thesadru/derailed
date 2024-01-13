@@ -36,7 +36,7 @@ class Meta:
         self.sessions: list["Session"] = []
 
     async def start(self) -> None:
-        self.db = await asyncpg.create_pool(os.getenv("PG_DSN"), record_class=Record)  # type: ignore
+        self.db = await asyncpg.create_pool(os.getenv("PG_DSN"), record_class=asyncpg.Record)  # type: ignore
         self.curthread = threading.current_thread().ident
         self.pid = os.getpid()
         self.redis = redis.from_url(os.getenv("REDIS_URI") or "error")
