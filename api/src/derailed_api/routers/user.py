@@ -72,7 +72,7 @@ async def register(model: Register):
 
             signer = itsdangerous.TimestampSigner(user.pop("password"))
 
-            user["_token"] = signer.sign(user["id"])
+            user["_token"] = signer.sign(str(user["id"]).encode())
 
         return user
 
@@ -103,7 +103,7 @@ async def login(model: Login):
 
         signer = itsdangerous.TimestampSigner(pw)
 
-        user["_token"] = signer.sign(user["id"])
+        user["_token"] = signer.sign(str(user["id"]).encode())
 
         return user
 
