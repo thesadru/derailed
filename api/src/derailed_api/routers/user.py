@@ -109,7 +109,6 @@ async def login(model: Login):
 
 
 class PatchUser(pydantic.BaseModel):
-    email: Annotated[Maybe[str], pydantic.Field(MISSING, min_length=5, max_length=128)]
     username: Annotated[
         Maybe[str], pydantic.Field(MISSING, min_length=3, max_length=32)
     ]
