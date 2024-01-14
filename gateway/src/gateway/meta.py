@@ -60,7 +60,7 @@ class Meta:
 
     def create_snowflake(self) -> int:
         current_ms = int(time.time() * 1000)
-        epoch = current_ms - 1672531200000 << 22
+        epoch = current_ms - 1704067200000 << 22
 
         if self.curthread is None:
             raise AssertionError
