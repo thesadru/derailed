@@ -122,15 +122,24 @@ class Session:
                     for r in relationships_rec:
                         relationships.append(dict(r))
 
-                    memberships = await session.fetch(
-                        "SELECT channel_id FROM channel_members WHERE user_id = $1;",
-                        user["id"],
+                    row_channels = await session.fetch(
+                        "SELECT * FROM channels WHERE id IN (SELECT channel_id FROM channel_members WHERE user_id = $1);"
                     )
 
                     channels = []
 
-                    for m in memberships:
-                        channels.append(dict(await session.fetchrow("SELECT * FROM channels WHERE id = $1;", m["channel_id"])))  # type: ignore
+                    for c in row_channels:
+                        channels.append(dict(c))
+
+                    for channel in channels:
+                        rows_members = await session.fetch("SELECT * FROM channel_members WHERE channel_id = $1", channel["id"])
+
+                        members: list[dict[str, Any]] = []
+
+                        for m in rows_members:
+                            members.append(dict(m))
+
+                        channel["recipients"] = members
 
                     settings_row = await session.fetchrow("SELECT * FROM user_settings WHERE user_id = $1;", user["id"])
 
