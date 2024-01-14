@@ -137,7 +137,7 @@ class Session:
                         members: list[dict[str, Any]] = []
 
                         for m in rows_members:
-                            members.append(dict(m))
+                            members.append(dict(m)["user_id"])
 
                         channel["recipients"] = members
 
