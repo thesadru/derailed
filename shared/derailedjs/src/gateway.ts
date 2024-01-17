@@ -2,7 +2,7 @@ import EventEmitter from "eventemitter3"
 
 export interface Event {
     op: number,
-    t: string | undefined,
+    t?: string,
     d: any,
     s: number
 }
@@ -31,7 +31,7 @@ export class DerailedWebSocket {
         this.ws = new WebSocket(import.meta.env.VITE_GATEWAY_URL)
         this.ws.onmessage = (ev) => {
             const data: Event = JSON.parse(ev.data)
-            if (data.t) {
+            if (data.t !== undefined) {
                 this.emitter.emit(data.t, data.d)
             }
             this.sequence = data.s

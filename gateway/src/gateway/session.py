@@ -4,6 +4,7 @@ import binascii
 from typing import Any
 
 import msgspec
+import pydantic
 import websockets.server as websockets
 from itsdangerous import TimestampSigner
 from pydantic import BaseModel
@@ -40,11 +41,11 @@ class Identify(BaseModel):
 
 class Session:
     # WS Codes
-    PAYLOAD_INVALID = 2000
-    INVALID_AUTHORIZATION = 2001
-    ALREADY_AUTHORIZED = 2002
-    HEARTBEAT_MISSED = 2003
-    HEARTBEAT_ALREADY_RECEIVED = 2004
+    PAYLOAD_INVALID = 4000
+    INVALID_AUTHORIZATION = 4001
+    ALREADY_AUTHORIZED = 4002
+    HEARTBEAT_MISSED = 4003
+    HEARTBEAT_ALREADY_RECEIVED = 4004
 
     # Op Codes
     EVENT = 0
@@ -97,7 +98,13 @@ class Session:
                     )
                     break
 
-                identify = Identify.model_validate(data)
+                try:
+                    identify = Identify.model_validate(data["d"])
+                except pydantic.ValidationError as err:
+                    await self.stop(
+                        self.PAYLOAD_INVALID, err.json(indent=None, include_url=False, include_context=False)
+                    )
+                    break
 
                 token = identify.token
 
@@ -123,7 +130,8 @@ class Session:
                         relationships.append(dict(r))
 
                     row_channels = await session.fetch(
-                        "SELECT * FROM channels WHERE id IN (SELECT channel_id FROM channel_members WHERE user_id = $1);"
+                        "SELECT * FROM channels WHERE id IN (SELECT channel_id FROM channel_members WHERE user_id = $1);",
+                        user["id"]
                     )
 
                     channels = []
@@ -143,7 +151,7 @@ class Session:
 
                     settings_row = await session.fetchrow("SELECT * FROM user_settings WHERE user_id = $1;", user["id"])
 
-                    assert settings_row
+                    assert settings_row is not None
 
                 await self.send(
                     {
@@ -181,6 +189,7 @@ class Session:
         self._hb_fut = asyncio.create_task(self.hb_wait())
 
     async def run(self) -> None:
+        self._recv_fut = asyncio.create_task(self._recv())
         await self.send({
             "op": self.HELLO,
             "d": {
@@ -188,7 +197,6 @@ class Session:
             }
         })
         self._hb_fut = asyncio.create_task(self.hb_wait())
-        self._recv_fut = asyncio.create_task(self._recv())
         await self._future
         self._hb_fut.cancel()
         self._recv_fut.cancel()

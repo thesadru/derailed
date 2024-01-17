@@ -1,3 +1,4 @@
+import base64
 from typing import Annotated, Any, Literal, TypedDict
 from uuid import uuid4
 
@@ -72,7 +73,7 @@ async def register(model: Register):
 
             signer = itsdangerous.TimestampSigner(user.pop("password"))
 
-            user["_token"] = signer.sign(str(user["id"]).encode())
+            user["_token"] = signer.sign(base64.b64encode(str(user["id"]).encode()))
 
         return user
 
@@ -103,7 +104,7 @@ async def login(model: Login):
 
         signer = itsdangerous.TimestampSigner(pw)
 
-        user["_token"] = signer.sign(str(user["id"]).encode())
+        user["_token"] = signer.sign(base64.b64encode(str(user["id"]).encode()))
 
         return user
 

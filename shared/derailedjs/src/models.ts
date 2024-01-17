@@ -16,7 +16,8 @@ export interface Channel {
     id: BigInt,
     type: number,
     name: string | null,
-    last_message_id: BigInt | null
+    last_message_id: BigInt | null,
+    recipients?: BigInt[]
 }
 
 export interface Message {

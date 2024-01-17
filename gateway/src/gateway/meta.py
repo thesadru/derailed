@@ -48,6 +48,8 @@ class Meta:
         while self.should_receive_events:
             msg = await self.pubsub.get_message(timeout=None)  # type: ignore
 
+            if not isinstance(msg, str):
+                continue
             data: dict[str, Any] = msgspec.json.decode(msg)
             receivers = cast(list[int] | int, data.pop("to"))
 

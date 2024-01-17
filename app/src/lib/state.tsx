@@ -1,5 +1,5 @@
 import { HTTPClient, DerailedWebSocket, User, Relationship, Channel, Settings } from "derailed.js";
-import {makeAutoObservable} from "mobx"
+import { makeAutoObservable } from "mobx"
 
 interface Ready {
     user: User,
@@ -13,16 +13,21 @@ class Cache {
     public channels: Channel[] = []
     public user: User | null = null
     public settings: Settings | null = null
+
+    constructor() {
+        makeAutoObservable(this)
+    }
 }
 
 export class State {
     public http: HTTPClient
     public ws: DerailedWebSocket
-    public cache: Cache = new Cache()
+    public cache: Cache
 
     constructor(token: string) {
         makeAutoObservable(this)
 
+        this.cache = new Cache()
         this.http = new HTTPClient(token)
         this.ws = new DerailedWebSocket(token)
         this.ws.emitter.on("READY", this.onReady, this)
@@ -35,6 +40,13 @@ export class State {
         this.cache.settings = data.settings
         this.cache.channels = data.channels
         this.cache.relationships = data.relationships
+        this.cache.channels.push({
+            id: BigInt(1),
+            name: null,
+            type: 0,
+            last_message_id: null,
+            recipients: []
+        })
     }
 }
 

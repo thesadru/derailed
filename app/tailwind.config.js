@@ -9,10 +9,11 @@ export default {
       colors: {
         "silver-gray": "#818181",
         "cheesy-black": "#161618",
-        "pepperoni-black": "#212124"
+        "pepperoni-black": "#212124",
+        "auberside-pink": "#FF8A8F"
       },
       fontFamily: {
-        "primary": ["'Open Sans'", "'Helvetica Neue'", "Helvetica", "Arial", "'Lucida Grande'", "sans-serif"]
+        "primary": ["'Roboto Flex'", "'Helvetica Neue'", "Helvetica", "Arial", "'Lucida Grande'", "sans-serif"]
       }
     },
   },
