@@ -8,12 +8,13 @@ export default {
     extend: {
       colors: {
         "silver-gray": "#818181",
-        "cheesy-black": "#161618",
-        "pepperoni-black": "#212124",
-        "auberside-pink": "#FF8A8F"
+        "cheesy-black": "#0D1627",
+        "pepperoni-black": "#172E57",
+        "auberside-pink": "#FF8A8F",
+        "existential-blurple": "#7364FF"
       },
       fontFamily: {
-        "primary": ["'Roboto Flex'", "'Helvetica Neue'", "Helvetica", "Arial", "'Lucida Grande'", "sans-serif"]
+        "primary": ["'Inter'", "'Helvetica Neue'", "Helvetica", "Arial", "'Lucida Grande'", "sans-serif"]
       }
     },
   },

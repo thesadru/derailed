@@ -12,9 +12,18 @@ export default observer(() => {
     const state = getState()
 
     return (
-        <main className="bg-[#6F80FF] flex">
-            <Sidebar />
-            <Channel />
+        <main>
+        {!state.loading ? (
+                <div className="bg-[#ffc0cb] flex">
+                    <Sidebar channelId={undefined} />
+                    <div className="bg-[#e8a7b2] w-full m-4 rounded-lg">
+                    </div>
+                </div>
+        ) : (
+            <div>
+                Loading...
+            </div>
+        )}
         </main>
     )
 })

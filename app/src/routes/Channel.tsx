@@ -2,6 +2,7 @@ import { getState } from "../lib/state";
 import { observer } from "mobx-react-lite"
 import { Navigate } from "@tanstack/react-router";
 import Sidebar from "../components/Sidebar";
+import Channel from "../components/Channel";
 
 export default observer(() => {
     if (!localStorage.getItem("token")) {
@@ -12,7 +13,16 @@ export default observer(() => {
 
     return (
         <main>
-            <Sidebar />
+            {!state.loading ? (
+                    <div className="bg-[#ffc0cb] flex">
+                        <Sidebar channelId={BigInt(1)} />
+                        <Channel channelId={BigInt(1)} />
+                    </div>
+            ) : (
+                <div>
+                    Loading...
+                </div>
+            )}
         </main>
     )
 })

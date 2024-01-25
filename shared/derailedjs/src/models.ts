@@ -23,7 +23,7 @@ export interface Channel {
 export interface Message {
     id: BigInt,
     channel_id: BigInt,
-    author_id: BigInt | null,
+    author: User,
     content: string | null,
     timestamp: string,
     edited_timestamp: string | null,

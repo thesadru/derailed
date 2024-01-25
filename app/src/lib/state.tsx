@@ -23,6 +23,7 @@ export class State {
     public http: HTTPClient
     public ws: DerailedWebSocket
     public cache: Cache
+    public loading: boolean = true
 
     constructor(token: string) {
         makeAutoObservable(this)
@@ -47,6 +48,7 @@ export class State {
             last_message_id: null,
             recipients: []
         })
+        this.loading = false
     }
 }
 
