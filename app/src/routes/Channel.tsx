@@ -12,9 +12,9 @@ export default observer(() => {
     const state = getState()
 
     return (
-        <main>
+        <div>
             {!state.loading ? (
-                    <div className="bg-[#ffc0cb] flex">
+                    <div className="bg-[#ffc0cb] flex overflow-hidden h-screen">
                         <Sidebar channelId={BigInt(1)} />
                         <Channel channelId={BigInt(1)} />
                     </div>
@@ -23,6 +23,6 @@ export default observer(() => {
                     Loading...
                 </div>
             )}
-        </main>
+        </div>
     )
 })

@@ -41,4 +41,24 @@
         font-variation-settings: 'wght' 900;
         font-stretch: 75%;
     }
+    .scrollbar::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+    
+    .scrollbar::-webkit-scrollbar-track {
+    border-radius: 50vh;
+    background: #212124 / 25%;
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb {
+    background: #161618;
+    border-radius: 50vh;
+    
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #c0a0b9;
+    }
 }
+

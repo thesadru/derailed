@@ -13,7 +13,7 @@ export default observer((props: SidebarProps) => {
     const state = getState()
 
     return (
-        <ul className="font-primary font-bold h-screen w-1/4 text-[#161618] pt-10 text-3xl flex flex-col overflow-x-auto justify-items-center gap-2">
+        <ul className="font-primary font-bold h-screen w-1/4 text-[#161618] pt-10 text-3xl flex flex-col overflow-y-hidden justify-items-center gap-2">
             <li key="home">
                 <Link to="/channels/@me">
                     <div className="flex justify-center pb-10 justify-items-center m-auto gap-1.5">

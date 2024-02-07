@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS users (
     display_name VARCHAR(32),
     password TEXT NOT NULL,
     flags BIGINT NOT NULL DEFAULT 0,
-    invited_by BIGINT
+    bio VARCHAR(120),
+    avatar TEXT,
+    banner TEXT
 );
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id BIGINT PRIMARY KEY,
@@ -72,22 +74,20 @@ CREATE TABLE IF NOT EXISTS message_reactions (
         REFERENCES users (id)
         ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS relationships (
+CREATE TABLE IF NOT EXISTS tracks (
+    id BIGINT PRIMARY KEY,
+    author_id BIGINT,
+    content VARCHAR(4096),
+    referenced_track_id BIGINT,
+    retrack BOOLEAN NOT NULL
+);
+CREATE TABLE IF NOT EXISTS follows (
     origin_user_id BIGINT NOT NULL,
     target_user_id BIGINT NOT NULL,
-    relation INTEGER NOT NULL,
-    PRIMARY KEY (origin_user_id, target_user_id),
     FOREIGN KEY (origin_user_id)
         REFERENCES users (id)
         ON DELETE CASCADE,
     FOREIGN KEY (target_user_id)
-        REFERENCES users (id)
-        ON DELETE CASCADE
-);
-CREATE TABLE IF NOT EXISTS invite_codes (
-    id TEXT PRIMARY KEY,
-    owner_id BIGINT NOT NULL,
-    FOREIGN KEY (owner_id)
         REFERENCES users (id)
         ON DELETE CASCADE
 );

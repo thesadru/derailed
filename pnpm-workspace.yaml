@@ -1,3 +1,4 @@
 ﻿packages:
   - "app"
+  - "vanguard"
   - "shared/**"
