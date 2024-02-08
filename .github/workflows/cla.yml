@@ -1,0 +1,28 @@
+name: "CLA Assistant"
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened,closed,synchronize]
+
+jobs:
+  CLAAssistant:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "CLA Assistant"
+        if: (github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'
+        uses: contributor-assistant/github-action@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          # the below token should have repo scope and must be manually added by you in the repository's secret
+          # This token is required only if you have configured to store the signatures in a remote repository/organization
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          path-to-signatures: 'signatures/version1/cla.json'
+          path-to-document: 'https://github.com/cla-assistant/github-action/blob/master/SAPCLA.md'
+          allowlist: train9
+          remote-organization-name: derailedapp
+          remote-repository-name: signatures
+          lock-pullrequest-aftermerge: true
+          custom-notsigned-prcomment: "Eep~! It's me, your super kawaii Train Conductor reporting live from Station Derailed! Just a teensy weensy reminder before you choo-choo on ahead: you gotta sign our [Contributor License Agreement](https://gist.github.com/VincentRPS/3b0f267edfa23e365b03b8bbc2f0cc6e) first, nya! Once you've finished reading all the legalese and given it a big ol' thumbs up, just comment \"I have read the CLA Document and I hereby sign the CLA\" so we can merge your PR like, super fast!\n\nP.S.:Curse Code, Train Conductor"
+          custom-allsigned-prcomment: "Squee! All the amazing contributors have signed the magical [Contributor License Agreement](https://gist.github.com/VincentRPS/3b0f267edfa23e365b03b8bbc2f0cc6e)! This means your PR is (legally) ready to choo-choo off to merge land!\n\nP.S.: Don't Curse Code, Train Conductor"
